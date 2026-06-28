@@ -1,0 +1,99 @@
+{
+  "name": "openemr-adt",
+  "system": "OpenEMR",
+  "direction": "outbound",
+  "messageTypes": [
+    "ADT^A04",
+    "ADT^A08"
+  ],
+  "msh": {
+    "sendingApp": "OPENEMR",
+    "sendingFac": "OPENEMR",
+    "receivingApp": "HUB",
+    "receivingFac": "HUB",
+    "processing": "P",
+    "version": "2.5.1"
+  },
+  "transport": {
+    "kind": "mllp",
+    "address": "127.0.0.1:2576"
+  },
+  "fieldMaps": [
+    {
+      "canonical": "=1",
+      "hl7Path": "PID-1.1",
+      "confidence": 1
+    },
+    {
+      "canonical": "mrn",
+      "hl7Path": "PID-3.1",
+      "confidence": 1
+    },
+    {
+      "canonical": "source.facility",
+      "hl7Path": "PID-3.4",
+      "confidence": 0.9
+    },
+    {
+      "canonical": "=MR",
+      "hl7Path": "PID-3.5",
+      "confidence": 1
+    },
+    {
+      "canonical": "familyName",
+      "hl7Path": "PID-5.1",
+      "confidence": 1
+    },
+    {
+      "canonical": "givenName",
+      "hl7Path": "PID-5.2",
+      "confidence": 1
+    },
+    {
+      "canonical": "middleName",
+      "hl7Path": "PID-5.3",
+      "confidence": 0.9
+    },
+    {
+      "canonical": "birthDate",
+      "hl7Path": "PID-7.1",
+      "confidence": 1
+    },
+    {
+      "canonical": "sex",
+      "hl7Path": "PID-8.1",
+      "confidence": 1
+    },
+    {
+      "canonical": "address.line1",
+      "hl7Path": "PID-11.1",
+      "confidence": 0.9
+    },
+    {
+      "canonical": "address.city",
+      "hl7Path": "PID-11.3",
+      "confidence": 0.9
+    },
+    {
+      "canonical": "address.state",
+      "hl7Path": "PID-11.4",
+      "confidence": 0.9
+    },
+    {
+      "canonical": "address.zip",
+      "hl7Path": "PID-11.5",
+      "confidence": 0.9
+    },
+    {
+      "canonical": "address.country",
+      "hl7Path": "PID-11.6",
+      "confidence": 0.8
+    },
+    {
+      "canonical": "phone",
+      "hl7Path": "PID-13.1",
+      "confidence": 0.8
+    }
+  ],
+  "confidence": 0.95
+}

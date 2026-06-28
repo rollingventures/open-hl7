@@ -1,6 +1,7 @@
 // Command hubd is the HL7 hub daemon: an MLLP listener (inbound HL7 -> store +
-// ACK) and a control-plane HTTP API (canonical events -> outbound ADT over
-// MLLP). M1 scope: the ADT patient feed, end to end.
+// ACK) and a control-plane HTTP API (canonical events -> outbound HL7 over
+// MLLP). Outbound encoding is driven by a ConnectorSpec — supply one with
+// -spec, or omit it to use the built-in OpenEMR ADT reference spec.
 package main
 
 import (
@@ -10,9 +11,9 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/rollingventures/open-hl7/internal/channel"
+	"github.com/rollingventures/open-hl7/internal/connectorgen"
 	"github.com/rollingventures/open-hl7/internal/controlplane"
 	"github.com/rollingventures/open-hl7/internal/mllp"
 	"github.com/rollingventures/open-hl7/internal/store"
@@ -23,14 +24,26 @@ func main() {
 		mllpAddr = flag.String("mllp-listen", ":2575", "MLLP listen address (inbound HL7)")
 		httpAddr = flag.String("http", ":8088", "control-plane HTTP listen address")
 		dbPath   = flag.String("db", "hub.db", "SQLite database path")
-		dest     = flag.String("dest", "127.0.0.1:2576", "destination MLLP address for outbound ADT")
+		dest     = flag.String("dest", "127.0.0.1:2576", "destination MLLP address (used by the default spec)")
 		secret   = flag.String("secret", os.Getenv("HUB_SECRET"), "shared secret required on POST /events")
-		chanName = flag.String("channel", "openemr-adt", "channel name")
+		chanName = flag.String("channel", "openemr-adt", "channel name (used by the default spec)")
+		specPath = flag.String("spec", "", "path to a ConnectorSpec JSON file (default: built-in OpenEMR ADT spec)")
 	)
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	slog.SetDefault(logger)
+
+	spec := connectorgen.OpenEMRADTSpec(*chanName, *dest)
+	if *specPath != "" {
+		loaded, err := connectorgen.LoadSpec(*specPath)
+		if err != nil {
+			logger.Error("load connector spec", "err", err)
+			os.Exit(1)
+		}
+		spec = loaded
+		logger.Info("loaded connector spec", "name", spec.Name, "system", spec.System, "path", *specPath)
+	}
 
 	st, err := store.OpenSQLite(*dbPath)
 	if err != nil {
@@ -39,19 +52,7 @@ func main() {
 	}
 	defer st.Close()
 
-	router := &channel.Router{
-		Cfg: channel.Config{
-			Name:            *chanName,
-			DestinationAddr: *dest,
-			SendingApp:      "OPENEMR",
-			SendingFac:      "OPENEMR",
-			ReceivingApp:    "HUB",
-			ReceivingFac:    "HUB",
-			SendTimeout:     10 * time.Second,
-		},
-		Store:  st,
-		Logger: logger,
-	}
+	router := &channel.Router{Spec: spec, Store: st, Logger: logger}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

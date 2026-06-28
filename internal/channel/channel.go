@@ -1,8 +1,9 @@
 // Package channel is the routing core: it turns a canonical event into an HL7
-// message, sends it to a destination over MLLP, records both the message and
-// the ACK, and conversely decodes inbound MLLP messages back to canonical and
-// records them. This is the generic, message-type-agnostic dispatch that
-// OpenEMR's per-vendor (quest_ln/labcorp_ln) code never had.
+// message *using a declarative ConnectorSpec*, sends it to a destination over
+// MLLP, records both the message and the ACK, and conversely decodes inbound
+// MLLP messages back to canonical and records them. Because encoding is driven
+// by the spec's field map (not hard-coded per vendor), one engine serves any
+// system — including specs synthesized by the agentic connector builder.
 package channel
 
 import (
@@ -13,25 +14,17 @@ import (
 	"time"
 
 	"github.com/rollingventures/open-hl7/internal/canonical"
+	"github.com/rollingventures/open-hl7/internal/connectorgen"
 	"github.com/rollingventures/open-hl7/internal/hl7"
 	"github.com/rollingventures/open-hl7/internal/mllp"
 	"github.com/rollingventures/open-hl7/internal/store"
 )
 
-// Config describes one channel (M1: a single ADT channel).
-type Config struct {
-	Name         string `yaml:"name"`
-	DestinationAddr string `yaml:"destinationAddr"` // host:port of the downstream MLLP listener
-	SendingApp   string `yaml:"sendingApp"`
-	SendingFac   string `yaml:"sendingFac"`
-	ReceivingApp string `yaml:"receivingApp"`
-	ReceivingFac string `yaml:"receivingFac"`
-	SendTimeout  time.Duration `yaml:"sendTimeout"`
-}
+const defaultSendTimeout = 10 * time.Second
 
-// Router wires a channel config to the store.
+// Router runs one ConnectorSpec against the store.
 type Router struct {
-	Cfg    Config
+	Spec   connectorgen.ConnectorSpec
 	Store  store.Store
 	Logger *slog.Logger
 	seq    int64
@@ -49,38 +42,25 @@ func (r *Router) nextCtrl() string {
 	return hl7.NewControlID(fmt.Sprintf("%04d", r.seq%10000))
 }
 
-// SendPatient encodes a canonical patient as ADT, sends it to the destination
-// over MLLP, persists it, and records the ACK result. Returns the stored id.
+// SendPatient encodes a canonical patient via the spec, sends it to the spec's
+// destination over MLLP, persists it, and records the ACK result.
 func (r *Router) SendPatient(ctx context.Context, p canonical.Patient) (int64, error) {
 	ctrl := r.nextCtrl()
-	route := hl7.MSHHeader{
-		SendingApp:   r.Cfg.SendingApp,
-		SendingFac:   r.Cfg.SendingFac,
-		ReceivingApp: r.Cfg.ReceivingApp,
-		ReceivingFac: r.Cfg.ReceivingFac,
-	}
-	raw, err := hl7.EncodeADT(p, route, ctrl)
+	raw, err := r.Spec.EncodeMessage(p, p.Event, ctrl)
 	if err != nil {
-		return 0, fmt.Errorf("encode adt: %w", err)
+		return 0, fmt.Errorf("encode message: %w", err)
 	}
+	msgType, _, _ := r.Spec.MessageTypeFor(p.Event)
 
-	msgType := "ADT^A04"
-	if p.Event == canonical.EventUpdate {
-		msgType = "ADT^A08"
-	}
 	id, err := r.Store.Save(ctx, store.Message{
-		Channel: r.Cfg.Name, Direction: store.Outbound, Type: msgType,
+		Channel: r.Spec.Name, Direction: store.Outbound, Type: msgType,
 		ControlID: ctrl, Raw: raw, Status: "sent",
 	})
 	if err != nil {
 		return 0, err
 	}
 
-	timeout := r.Cfg.SendTimeout
-	if timeout == 0 {
-		timeout = 10 * time.Second
-	}
-	ackRaw, err := mllp.Send(r.Cfg.DestinationAddr, []byte(raw), timeout)
+	ackRaw, err := mllp.Send(r.Spec.Transport.Address, []byte(raw), defaultSendTimeout)
 	if err != nil {
 		_ = r.Store.SetAck(ctx, id, "", err.Error(), "error")
 		return id, fmt.Errorf("mllp send: %w", err)
@@ -94,13 +74,18 @@ func (r *Router) SendPatient(ctx context.Context, p canonical.Patient) (int64, e
 	if err := r.Store.SetAck(ctx, id, code, text, status); err != nil {
 		r.log().Error("failed to record ack", "id", id, "err", err)
 	}
-	r.log().Info("sent ADT", "id", id, "type", msgType, "ack", code)
+	r.log().Info("sent message", "id", id, "type", msgType, "ack", code)
 	return id, nil
 }
 
-// InboundHandler is the mllp.Handler: it decodes an inbound ADT, persists it,
-// and returns an ACK. Writing the patient into a target EMR is delegated to
-// the (optional) Sink — for OpenEMR that is an HTTP POST to the module webhook.
+// Sink receives patients decoded from inbound messages (e.g. the OpenEMR
+// adapter webhook). Nil sink = store-and-ack only.
+type Sink interface {
+	WritePatient(ctx context.Context, p canonical.Patient) error
+}
+
+// InboundHandler decodes an inbound ADT, persists it, optionally writes it to a
+// sink, and returns an ACK.
 func (r *Router) InboundHandler(sink Sink) mllp.Handler {
 	return func(ctx context.Context, payload []byte, remote net.Addr) ([]byte, error) {
 		raw := string(payload)
@@ -112,15 +97,14 @@ func (r *Router) InboundHandler(sink Sink) mllp.Handler {
 		}
 
 		id, serr := r.Store.Save(ctx, store.Message{
-			Channel: r.Cfg.Name, Direction: store.Inbound,
+			Channel: r.Spec.Name, Direction: store.Inbound,
 			Type: "ADT^" + dec.Trigger, ControlID: dec.ControlID, Raw: raw, Status: "received",
 		})
 		if serr != nil {
 			r.log().Error("persist inbound", "err", serr)
 		}
 
-		ackCode := hl7.ACKAccept
-		ackText := ""
+		ackCode, ackText := hl7.ACKAccept, ""
 		if sink != nil {
 			if err := sink.WritePatient(ctx, dec.Patient); err != nil {
 				ackCode, ackText = hl7.ACKError, "downstream write failed"
@@ -133,12 +117,6 @@ func (r *Router) InboundHandler(sink Sink) mllp.Handler {
 		}
 		return []byte(hl7.BuildACK(dec.MSH, ackCode, ackText).Encode()), nil
 	}
-}
-
-// Sink receives patients decoded from inbound messages (e.g. the OpenEMR
-// adapter webhook). Nil sink = store-and-ack only.
-type Sink interface {
-	WritePatient(ctx context.Context, p canonical.Patient) error
 }
 
 func parseACK(raw string) (code, text string) {
