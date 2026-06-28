@@ -12,8 +12,8 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/rollingventures/hl7-hub/internal/hl7"
-	"github.com/rollingventures/hl7-hub/internal/mllp"
+	"github.com/rollingventures/open-hl7/internal/hl7"
+	"github.com/rollingventures/open-hl7/internal/mllp"
 )
 
 func main() {

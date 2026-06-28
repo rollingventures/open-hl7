@@ -1,4 +1,4 @@
-# hl7-hub
+# open-hl7
 
 An open-source, EMR-agnostic **HL7 interface deployer** — a Mirth-Connect-style
 channel engine designed to be deployed on-demand. OpenEMR is the first
@@ -7,7 +7,7 @@ integration; the hub itself knows nothing about any specific EMR.
 ## Architecture
 
 ```
-EMR adapter (e.g. oe-module-hl7-hub)            hl7-hub (this repo)
+EMR adapter (e.g. oe-module-open-hl7)            open-hl7 (this repo)
   • subscribes to EMR events          POST /events   • control-plane HTTP API
   • maps native model -> canonical  ───────────────▶  • canonical -> HL7 ADT
   • receives canonical via webhook  ◀───────────────  • MLLP client + server (framing + ACK)
@@ -18,6 +18,20 @@ The hub speaks a **neutral canonical model** (`internal/canonical`). Each EMR
 ships a thin adapter that maps its events to canonical and writes canonical
 back; the hub never imports EMR-specific code. That is what makes "works with
 any EMR" real — OpenEMR is just adapter #1.
+
+## The differentiator: agentic connector builder
+
+Instead of hand-reverse-engineering each system's interface, a vision-capable
+**Claude agent reviews screenshots** of the target EMR (config screens, field
+layouts, sample messages) and **synthesizes a connector on the fly** — a
+declarative `ConnectorSpec` (transport + MSH routing + field map) that the hub
+runs as a live channel, with a human approving before deploy. See
+[docs/agentic-connector-builder.md](docs/agentic-connector-builder.md) and the
+spec types in `internal/connectorgen`.
+
+The OpenEMR adapter lives in this repo at `adapters/openemr/oe-module-hl7-hub`
+(it installs into OpenEMR as a module — it is **not** committed to the OpenEMR
+codebase).
 
 ## Milestone 1 — ADT patient feed (this scaffold)
 

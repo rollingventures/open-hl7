@@ -10,9 +10,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/rollingventures/hl7-hub/internal/canonical"
-	"github.com/rollingventures/hl7-hub/internal/channel"
-	"github.com/rollingventures/hl7-hub/internal/store"
+	"github.com/rollingventures/open-hl7/internal/canonical"
+	"github.com/rollingventures/open-hl7/internal/channel"
+	"github.com/rollingventures/open-hl7/internal/store"
 )
 
 // Server is the control-plane HTTP server.

@@ -12,10 +12,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/rollingventures/hl7-hub/internal/channel"
-	"github.com/rollingventures/hl7-hub/internal/controlplane"
-	"github.com/rollingventures/hl7-hub/internal/mllp"
-	"github.com/rollingventures/hl7-hub/internal/store"
+	"github.com/rollingventures/open-hl7/internal/channel"
+	"github.com/rollingventures/open-hl7/internal/controlplane"
+	"github.com/rollingventures/open-hl7/internal/mllp"
+	"github.com/rollingventures/open-hl7/internal/store"
 )
 
 func main() {

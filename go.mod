@@ -1,4 +1,4 @@
-module github.com/rollingventures/hl7-hub
+module github.com/rollingventures/open-hl7
 
 go 1.25.4
 

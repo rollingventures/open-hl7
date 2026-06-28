@@ -12,10 +12,10 @@ import (
 	"net"
 	"time"
 
-	"github.com/rollingventures/hl7-hub/internal/canonical"
-	"github.com/rollingventures/hl7-hub/internal/hl7"
-	"github.com/rollingventures/hl7-hub/internal/mllp"
-	"github.com/rollingventures/hl7-hub/internal/store"
+	"github.com/rollingventures/open-hl7/internal/canonical"
+	"github.com/rollingventures/open-hl7/internal/hl7"
+	"github.com/rollingventures/open-hl7/internal/mllp"
+	"github.com/rollingventures/open-hl7/internal/store"
 )
 
 // Config describes one channel (M1: a single ADT channel).

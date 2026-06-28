@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/rollingventures/hl7-hub/internal/canonical"
+	"github.com/rollingventures/open-hl7/internal/canonical"
 )
 
 // triggerForEvent maps a canonical event to its ADT trigger event.
