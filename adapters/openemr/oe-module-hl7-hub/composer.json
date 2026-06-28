@@ -1,0 +1,19 @@
+{
+    "name": "openemr/oe-module-hl7-hub",
+    "description": "OpenEMR adapter for the EMR-agnostic HL7 hub: bridges OpenEMR patient events to the hub's canonical model and writes canonical data back via the service layer.",
+    "type": "openemr-module",
+    "license": "GPL-3.0-only",
+    "authors": [
+        {
+            "name": "Chris Dickman"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "OpenEMR\\Modules\\Hl7Hub\\": "src/"
+        }
+    },
+    "require": {
+        "php": ">=8.2"
+    }
+}
