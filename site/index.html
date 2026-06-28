@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>open-hl7 — the agentic HL7 interface deployer</title>
+<meta name="description" content="Open-source, EMR-agnostic HL7 integration hub with an agentic connector builder. Point it at any EMR's screens; ship a working interface.">
+<style>
+  :root{
+    --bg:#0a0e14; --panel:#111722; --line:#1e2937; --fg:#e6edf3; --mut:#9aa7b4;
+    --acc:#36e2b4; --acc2:#5aa9ff; --code:#0d1320;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.6;
+    background-image:radial-gradient(60rem 30rem at 70% -10%,rgba(54,226,180,.10),transparent),
+                     radial-gradient(50rem 25rem at 10% 0%,rgba(90,169,255,.08),transparent);}
+  a{color:var(--acc2);text-decoration:none} a:hover{text-decoration:underline}
+  .wrap{max-width:980px;margin:0 auto;padding:0 20px}
+  header{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
+  .brand{font-family:var(--mono);font-weight:700;font-size:18px;letter-spacing:.5px}
+  .brand b{color:var(--acc)}
+  nav a{color:var(--mut);margin-left:18px;font-size:14px}
+  .hero{padding:64px 0 28px;text-align:center}
+  .pill{display:inline-block;border:1px solid var(--line);color:var(--mut);border-radius:999px;
+    padding:5px 13px;font-size:12.5px;font-family:var(--mono);margin-bottom:22px}
+  h1{font-size:clamp(34px,6vw,56px);line-height:1.08;margin:0 0 16px;letter-spacing:-1px}
+  h1 .g{background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{font-size:clamp(16px,2.4vw,20px);color:var(--mut);max-width:680px;margin:0 auto 30px}
+  .install{display:flex;align-items:center;gap:10px;max-width:760px;margin:0 auto;background:var(--code);
+    border:1px solid var(--line);border-radius:12px;padding:14px 16px;font-family:var(--mono);text-align:left}
+  .install code{color:var(--fg);font-size:13.5px;overflow-x:auto;white-space:nowrap;flex:1}
+  .install .dollar{color:var(--acc)}
+  .copy{background:#16202e;border:1px solid var(--line);color:var(--mut);border-radius:8px;
+    padding:7px 11px;font-size:12px;cursor:pointer;font-family:var(--mono)}
+  .copy:hover{color:var(--fg);border-color:#2b3a4d}
+  .cta{margin:26px 0 8px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .btn{border-radius:10px;padding:11px 18px;font-weight:600;font-size:14px;border:1px solid var(--line)}
+  .btn.p{background:var(--acc);color:#062019;border-color:transparent}
+  .btn.s{background:transparent;color:var(--fg)}
+  section{padding:46px 0;border-top:1px solid var(--line)}
+  h2{font-size:26px;margin:0 0 6px;letter-spacing:-.4px}
+  .lead{color:var(--mut);margin:0 0 26px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .card h3{margin:0 0 8px;font-size:16px}
+  .card h3 .ic{color:var(--acc);font-family:var(--mono)}
+  .card p{margin:0;color:var(--mut);font-size:14.5px}
+  pre{background:var(--code);border:1px solid var(--line);border-radius:12px;padding:18px;overflow:auto;
+    font-family:var(--mono);font-size:13px;color:#cdd9e5;line-height:1.5}
+  .muted{color:var(--mut)} .acc{color:var(--acc)}
+  footer{border-top:1px solid var(--line);padding:30px 0 60px;color:var(--mut);font-size:13.5px;text-align:center}
+  .steps{counter-reset:s;display:grid;gap:14px}
+  .step{display:flex;gap:14px;align-items:flex-start}
+  .step .n{counter-increment:s;flex:0 0 28px;height:28px;border-radius:50%;background:#16202e;border:1px solid var(--line);
+    color:var(--acc);font-family:var(--mono);font-size:13px;display:flex;align-items:center;justify-content:center}
+  .step .n::before{content:counter(s)}
+  .step b{font-size:15px} .step p{margin:2px 0 0;color:var(--mut);font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">open<b>-hl7</b></div>
+    <nav>
+      <a href="#install">Install</a>
+      <a href="#how">How it works</a>
+      <a href="https://github.com/rollingventures/open-hl7">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="hero">
+    <span class="pill">EMR-agnostic · MLLP + ADT · agentic connector builder</span>
+    <h1>Ship an HL7 interface<br><span class="g">by showing it screenshots.</span></h1>
+    <p class="sub">open-hl7 is an open-source, on-demand HL7 integration hub. A vision-capable
+      agent reviews an existing EMR's config screens and sample messages, then synthesizes a
+      working connector on the fly — no per-vendor code. OpenEMR is the first integration.</p>
+
+    <div class="install" id="install">
+      <span class="dollar">$</span>
+      <code id="cmd">curl -fsSL https://raw.githubusercontent.com/rollingventures/open-hl7/main/install.sh | sh</code>
+      <button class="copy" onclick="copyCmd()">copy</button>
+    </div>
+
+    <div class="cta">
+      <a class="btn p" href="https://github.com/rollingventures/open-hl7">Star on GitHub</a>
+      <a class="btn s" href="https://github.com/rollingventures/open-hl7/blob/main/docs/agentic-connector-builder.md">Read the design</a>
+    </div>
+    <p class="muted" style="font-size:13px">Linux & macOS · amd64/arm64 · single static binary</p>
+  </div>
+
+  <section>
+    <h2>Why it's different</h2>
+    <p class="lead">Traditional HL7 integration is a human reading interface PDFs and clicking config screens. open-hl7 turns that perception-and-mapping work over to an agent.</p>
+    <div class="grid">
+      <div class="card"><h3><span class="ic">◆</span> Agentic connector builder</h3>
+        <p>Feed Claude screenshots + sample messages of a target EMR. It proposes a connector, generates a test message, diffs it against the real sample, and self-corrects until it matches.</p></div>
+      <div class="card"><h3><span class="ic">◆</span> Works with any EMR</h3>
+        <p>The hub speaks a neutral canonical model and never imports EMR code. Each system is a declarative <code>ConnectorSpec</code>, not a new codebase.</p></div>
+      <div class="card"><h3><span class="ic">◆</span> Real HL7 transport</h3>
+        <p>MLLP server + client with framing and ACK/NAK — the piece most EMR cores lack. ADT today; lab ORM/ORU next.</p></div>
+      <div class="card"><h3><span class="ic">◆</span> Audit &amp; replay built in</h3>
+        <p>Every message and its acknowledgement is persisted. Query, review, and (soon) replay — the backbone an interface engine needs.</p></div>
+      <div class="card"><h3><span class="ic">◆</span> Human in the loop</h3>
+        <p>The agent never auto-deploys. It emits a reviewable spec with a confidence score; you approve before a channel goes live.</p></div>
+      <div class="card"><h3><span class="ic">◆</span> Open source</h3>
+        <p>A single static Go binary. Run it anywhere, on demand. No black-box engine.</p></div>
+    </div>
+  </section>
+
+  <section id="how">
+    <h2>How it works</h2>
+    <p class="lead">From screenshots to a live channel.</p>
+    <div class="steps">
+      <div class="step"><div class="n"></div><div><b>Perceive</b><p>The agent reads screenshots of the target system — config screens, field layouts, a sample message.</p></div></div>
+      <div class="step"><div class="n"></div><div><b>Map</b><p>It proposes a <code>ConnectorSpec</code>: transport, MSH routing, and a canonical ⇄ HL7 field map.</p></div></div>
+      <div class="step"><div class="n"></div><div><b>Validate</b><p>It renders a message from the proposed map and diffs it against the system's real sample — looping until they match.</p></div></div>
+      <div class="step"><div class="n"></div><div><b>Approve &amp; deploy</b><p>You review the spec and confidence report; the hub loads it and runs it as a live channel.</p></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Try the ADT loop</h2>
+    <p class="lead">After installing, run the hub and push a patient through it.</p>
+<pre>open-hl7 -mllp-listen :2575 -http :8088 -dest 127.0.0.1:2576
+
+curl -s localhost:8088/events -H 'content-type: application/json' -d '{
+  "mrn":"12345","familyName":"Doe","givenName":"Jane",
+  "birthDate":"19800115","sex":"F","event":"create",
+  "source":{"emr":"openemr","facility":"CLINIC"}
+}'
+
+<span class="muted"># -> encodes ADT^A04 over MLLP, records the ACK, archives the message</span>
+curl -s localhost:8088/messages | jq .</pre>
+  </section>
+
+  <footer>
+    open-hl7 — open-source HL7 interface deployer ·
+    <a href="https://github.com/rollingventures/open-hl7">github.com/rollingventures/open-hl7</a>
+  </footer>
+</div>
+
+<script>
+function copyCmd(){
+  var t=document.getElementById('cmd').innerText;
+  navigator.clipboard.writeText(t).then(function(){
+    var b=document.querySelector('.copy'); var o=b.innerText; b.innerText='copied!';
+    setTimeout(function(){b.innerText=o},1400);
+  });
+}
+</script>
+</body>
+</html>

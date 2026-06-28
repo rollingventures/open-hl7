@@ -19,8 +19,12 @@ import (
 	"github.com/rollingventures/open-hl7/internal/store"
 )
 
+// version is stamped at release time via -ldflags "-X main.version=...".
+var version = "dev"
+
 func main() {
 	var (
+		showVersion = flag.Bool("version", false, "print version and exit")
 		mllpAddr = flag.String("mllp-listen", ":2575", "MLLP listen address (inbound HL7)")
 		httpAddr = flag.String("http", ":8088", "control-plane HTTP listen address")
 		dbPath   = flag.String("db", "hub.db", "SQLite database path")
@@ -31,8 +35,14 @@ func main() {
 	)
 	flag.Parse()
 
+	if *showVersion {
+		println("open-hl7 " + version)
+		return
+	}
+
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	slog.SetDefault(logger)
+	logger.Info("open-hl7 starting", "version", version)
 
 	spec := connectorgen.OpenEMRADTSpec(*chanName, *dest)
 	if *specPath != "" {

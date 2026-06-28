@@ -1,0 +1,39 @@
+version: 2
+
+project_name: open-hl7
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: open-hl7
+    main: ./cmd/hubd
+    binary: open-hl7
+    env:
+      - CGO_ENABLED=0
+    goos: [linux, darwin]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+
+archives:
+  - id: default
+    name_template: "open-hl7_{{ .Os }}_{{ .Arch }}"
+    formats: [tar.gz]
+    files:
+      - README.md
+      - LICENSE*
+
+checksum:
+  name_template: "checksums.txt"
+
+release:
+  github:
+    owner: rollingventures
+    name: open-hl7
+  draft: false
+
+changelog:
+  use: github
+  sort: asc

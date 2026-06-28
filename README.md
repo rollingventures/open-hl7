@@ -4,6 +4,24 @@ An open-source, EMR-agnostic **HL7 interface deployer** — a Mirth-Connect-styl
 channel engine designed to be deployed on-demand. OpenEMR is the first
 integration; the hub itself knows nothing about any specific EMR.
 
+Website: **https://rollingventures.github.io/open-hl7**
+
+## Install
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/rollingventures/open-hl7/main/install.sh | sh
+```
+
+Linux & macOS, amd64/arm64. Installs the `open-hl7` binary to `/usr/local/bin`
+(or `~/.local/bin`). Pin a version with `OPEN_HL7_VERSION=v0.1.0` or change the
+target with `OPEN_HL7_BIN_DIR=...`. From source: `go install github.com/rollingventures/open-hl7/cmd/hubd@latest`.
+
+> The installer downloads a prebuilt binary from GitHub Releases — cut the first
+> release by pushing a tag (`git tag v0.1.0 && git push origin v0.1.0`); the
+> release workflow (GoReleaser) builds the cross-platform binaries + checksums.
+> `curl | sh` and the website require the repo (or its releases/Pages) to be
+> **public**.
+
 ## Architecture
 
 ```
