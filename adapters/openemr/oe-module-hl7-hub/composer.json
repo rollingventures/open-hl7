@@ -13,7 +13,20 @@
             "OpenEMR\\Modules\\Hl7Hub\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "OpenEMR\\Modules\\Hl7Hub\\Tests\\": "tests/"
+        }
+    },
     "require": {
-        "php": ">=8.2"
+        "php": ">=8.2",
+        "psr/log": "^3.0 || ^2.0 || ^1.1"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5"
+    },
+    "scripts": {
+        "test": "phpunit --testsuite unit",
+        "test:integration": "tests/run-integration.sh"
     }
 }
