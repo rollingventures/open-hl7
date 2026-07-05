@@ -8,6 +8,7 @@ package channel
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net"
@@ -18,16 +19,49 @@ import (
 	"github.com/rollingventures/open-hl7/internal/hl7"
 	"github.com/rollingventures/open-hl7/internal/mllp"
 	"github.com/rollingventures/open-hl7/internal/store"
+	"github.com/rollingventures/open-hl7/internal/transform"
 )
 
 const defaultSendTimeout = 10 * time.Second
 
 // Router runs one ConnectorSpec against the store.
 type Router struct {
-	Spec   connectorgen.ConnectorSpec
-	Store  store.Store
-	Logger *slog.Logger
-	seq    int64
+	Spec  connectorgen.ConnectorSpec
+	Store store.Store
+	// Transformer, when set, encodes outbound messages via a WASM transform
+	// instead of the spec's declarative field map (see internal/transform).
+	Transformer transform.Transformer
+	Logger      *slog.Logger
+	seq         int64
+}
+
+// transformInput is the JSON handed to a WASM transform: the canonical patient
+// plus the routing context the guest needs to build MSH/EVN.
+type transformInput struct {
+	canonical.Patient
+	ControlID string `json:"controlId"`
+	Timestamp string `json:"timestamp"`
+}
+
+// encode renders the outbound HL7 for a patient, using the WASM transform when
+// configured, otherwise the declarative field map.
+func (r *Router) encode(ctx context.Context, p canonical.Patient, ctrl string) (string, error) {
+	if r.Transformer == nil {
+		return r.Spec.EncodeMessage(p, p.Event, ctrl)
+	}
+	input, err := json.Marshal(transformInput{
+		Patient:   p,
+		ControlID: ctrl,
+		Timestamp: time.Now().UTC().Format("20060102150405"),
+	})
+	if err != nil {
+		return "", fmt.Errorf("marshal transform input: %w", err)
+	}
+	out, err := r.Transformer.Transform(ctx, input)
+	if err != nil {
+		return "", fmt.Errorf("wasm transform: %w", err)
+	}
+	return string(out), nil
 }
 
 func (r *Router) log() *slog.Logger {
@@ -46,7 +80,7 @@ func (r *Router) nextCtrl() string {
 // destination over MLLP, persists it, and records the ACK result.
 func (r *Router) SendPatient(ctx context.Context, p canonical.Patient) (int64, error) {
 	ctrl := r.nextCtrl()
-	raw, err := r.Spec.EncodeMessage(p, p.Event, ctrl)
+	raw, err := r.encode(ctx, p, ctrl)
 	if err != nil {
 		return 0, fmt.Errorf("encode message: %w", err)
 	}

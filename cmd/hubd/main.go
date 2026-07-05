@@ -17,6 +17,7 @@ import (
 	"github.com/rollingventures/open-hl7/internal/controlplane"
 	"github.com/rollingventures/open-hl7/internal/mllp"
 	"github.com/rollingventures/open-hl7/internal/store"
+	"github.com/rollingventures/open-hl7/internal/transform"
 )
 
 // version is stamped at release time via -ldflags "-X main.version=...".
@@ -32,6 +33,7 @@ func main() {
 		secret   = flag.String("secret", os.Getenv("HUB_SECRET"), "shared secret required on POST /events")
 		chanName = flag.String("channel", "openemr-adt", "channel name (used by the default spec)")
 		specPath = flag.String("spec", "", "path to a ConnectorSpec JSON file (default: built-in OpenEMR ADT spec)")
+		wasmPath = flag.String("wasm-transform", "", `WASM transform module: a path to a .wasm, or "embedded" for the built-in sample. Overrides the field map for outbound encoding.`)
 	)
 	flag.Parse()
 
@@ -66,6 +68,25 @@ func main() {
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
+	if *wasmPath != "" {
+		var wasmBytes []byte
+		if *wasmPath != "embedded" {
+			wasmBytes, err = os.ReadFile(*wasmPath)
+			if err != nil {
+				logger.Error("read wasm transform", "err", err)
+				os.Exit(1)
+			}
+		}
+		wt, werr := transform.NewWasmTransformer(ctx, wasmBytes)
+		if werr != nil {
+			logger.Error("init wasm transform", "err", werr)
+			os.Exit(1)
+		}
+		defer wt.Close(ctx)
+		router.Transformer = wt
+		logger.Info("WASM transform enabled", "source", *wasmPath)
+	}
 
 	// Inbound MLLP server: decode ADT -> store -> ACK. Sink is nil for M1
 	// (store-and-ack); wiring an OpenEMR write-back sink is the next step.

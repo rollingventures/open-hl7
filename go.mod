@@ -2,7 +2,10 @@ module github.com/rollingventures/open-hl7
 
 go 1.25.4
 
-require modernc.org/sqlite v1.53.0
+require (
+	github.com/tetratelabs/wazero v1.12.0
+	modernc.org/sqlite v1.53.0
+)
 
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
